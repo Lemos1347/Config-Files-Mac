@@ -1,5 +1,8 @@
 return {
   "neovim/nvim-lspconfig",
+  opts = {
+    inlay_hints = { enabled = true },
+  },
   event = { "BufReadPre", "BufNewFile" },
   dependencies = {
     "hrsh7th/cmp-nvim-lsp",
@@ -17,6 +20,10 @@ return {
 
     local opts = { noremap = true, silent = true }
     local on_attach = function(client, bufnr)
+      if vim.lsp.inlay_hint then
+        vim.lsp.inlay_hint.enable(0, true)
+      end
+
       opts.buffer = bufnr
 
       -- set keybinds
@@ -81,6 +88,32 @@ return {
     lspconfig["tsserver"].setup({
       capabilities = capabilities,
       on_attach = on_attach,
+      settings = {
+        typescript = {
+          inlayHints = {
+            includeInlayParameterNameHints = "all",
+            includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+            includeInlayFunctionParameterTypeHints = true,
+            includeInlayVariableTypeHints = true,
+            includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+            includeInlayPropertyDeclarationTypeHints = true,
+            includeInlayFunctionLikeReturnTypeHints = true,
+            includeInlayEnumMemberValueHints = true,
+          },
+        },
+        javascript = {
+          inlayHints = {
+            includeInlayParameterNameHints = "all",
+            includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+            includeInlayFunctionParameterTypeHints = true,
+            includeInlayVariableTypeHints = true,
+            includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+            includeInlayPropertyDeclarationTypeHints = true,
+            includeInlayFunctionLikeReturnTypeHints = true,
+            includeInlayEnumMemberValueHints = true,
+          },
+        },
+      },
     })
 
     -- configure css server
@@ -144,6 +177,9 @@ return {
       on_attach = on_attach,
       settings = { -- custom settings for lua
         Lua = {
+          hint = {
+            enable = true,
+          },
           -- make the language server recognize "vim" global
           diagnostics = {
             globals = { "vim" },
@@ -214,30 +250,45 @@ return {
     -- lspconfig["rust_analyzer"].setup({
     --   on_attach = on_attach,
     --   settings = {
-    -- ["rust-analyzer"] = {
-    --   completition = {
-    --     dynamicRegistration = true,
-    --   },
-    --   imports = {
-    --     granularity = {
-    --       group = "module",
+    --     ["rust-analyzer"] = {
+    --       diagnostics = {
+    --         enable = true,
+    --       },
+    --       completition = {
+    --         dynamicRegistration = true,
+    --       },
+    --       imports = {
+    --         granularity = {
+    --           group = "module",
+    --         },
+    --         prefix = "self",
+    --       },
+    --       cargo = {
+    --         buildScripts = {
+    --           enable = true,
+    --         },
+    --       },
+    --       procMacro = {
+    --         enable = true,
+    --       },
     --     },
-    --     prefix = "self",
-    --   },
-    --   cargo = {
-    --     buildScripts = {
-    --       enable = true,
-    --     },
-    --   },
-    --   procMacro = {
-    --     enable = true,
-    --   },
-    -- },
     --   },
     -- })
 
     --configure golps
-    lspconfig["golps"].setup({
+    lspconfig["gopls"].setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+    })
+
+    --configure cmake
+    lspconfig["cmake"].setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+    })
+
+    --configure clangd for C and C++
+    lspconfig["clangd"].setup({
       capabilities = capabilities,
       on_attach = on_attach,
     })

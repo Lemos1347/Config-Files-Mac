@@ -22,7 +22,9 @@ return {
         python = { "isort", "black" },
         rust = { "rustfmt" },
         go = { "goimports" },
-        cmake = { "cmake-format" },
+        cmake = { "cmakelang" },
+        c = { "clang-format" },
+        cpp = { "clang-format" },
       },
       format_on_save = {
         lsp_fallback = true,

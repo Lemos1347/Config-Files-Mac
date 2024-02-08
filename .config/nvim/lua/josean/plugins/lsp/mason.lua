@@ -37,6 +37,9 @@ return {
         "emmet_ls",
         "prismals",
         "pyright",
+        "clangd",
+        "cmake",
+        "gopls",
       },
       -- auto-install configured servers (with lspconfig)
       automatic_installation = true, -- not the same as ensure_installed
@@ -50,6 +53,9 @@ return {
         "black", -- python formatter
         "pylint", -- python linter
         "eslint_d", -- js linter
+        "clang-format", -- C/C++ formatter
+        "cmakelang", -- cmake formatter
+        "goimports", -- golang formatter
       },
     })
   end,
