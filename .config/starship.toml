@@ -1,0 +1,9 @@
+[python]
+# Ativar o módulo Python somente se algum dos seguintes arquivos ou diretórios estiver presente
+detect_files = ["pyproject.toml", "requirements.txt", "*.py"]
+detect_folders = ["venv", ".venv"]
+
+[directory]
+fish_style_pwd_dir_length = 0  # Força o caminho completo a ser exibido
+truncate_to_repo = false       # Desativa a truncagem ao repositório git
+truncation_length = 0          # Desativa qualquer outra forma de truncagem
