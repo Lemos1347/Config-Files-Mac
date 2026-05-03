@@ -26,6 +26,7 @@ local cpu = sbar.add("item", "widgets.cpu", {
     color = colors.with_alpha(colors.item.bg, 0.78),
     border_color = colors.with_alpha(colors.blue, 0.18),
   },
+  click_script = settings.config_dir .. "/plugins/open_menu_extra.sh stats-cpu",
 })
 
 local command = [[/usr/bin/top -l 1 -s 0 -n 0 | /usr/bin/awk -F'[:,%]+' '/CPU usage/ { printf "%d", $2 + $3 + 0.5 }']]

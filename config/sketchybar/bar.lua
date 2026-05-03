@@ -13,7 +13,7 @@ sbar.bar({
   border_color = colors.bar.border,
   border_width = 1,
   blur_radius = 20,
-  topmost = true,
+  topmost = false,
   sticky = true,
   shadow = false,
 })

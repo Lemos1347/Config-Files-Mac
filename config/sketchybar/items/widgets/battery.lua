@@ -31,6 +31,7 @@ local battery = sbar.add("item", "widgets.battery", {
     color = colors.with_alpha(colors.item.bg, 0.78),
     border_color = colors.with_alpha(colors.green, 0.18),
   },
+  click_script = settings.config_dir .. "/plugins/open_menu_extra.sh aldente",
 })
 
 local function battery_style(charge, charging)

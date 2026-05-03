@@ -15,16 +15,14 @@ sbar.add("item", "apple", {
     font = {
       family = settings.font.text,
       style = settings.font.style_map.Black,
-      size = 18.0,
+      size = 16.0,
     },
     color = colors.with_alpha(colors.white, 0.9),
-    padding_left = 8,
-    padding_right = 8,
+    y_offset = -1,
+    padding_left = 7,
+    padding_right = 7,
   },
   label = { drawing = false },
-  background = {
-    color = colors.with_alpha(colors.purple, 0.28),
-    border_color = colors.with_alpha(colors.lavender, 0.18),
-  },
+  background = { drawing = false },
   click_script = "open -a 'System Settings'",
 })

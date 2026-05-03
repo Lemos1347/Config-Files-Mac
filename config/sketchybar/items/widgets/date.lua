@@ -20,6 +20,7 @@ local date = sbar.add("item", "widgets.date", {
     color = colors.with_alpha(colors.item.bg, 0.78),
     border_color = colors.with_alpha(colors.lavender, 0.22),
   },
+  click_script = settings.config_dir .. "/plugins/open_menu_extra.sh calendar",
 })
 
 local function update()

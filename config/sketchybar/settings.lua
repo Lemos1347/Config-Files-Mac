@@ -1,4 +1,5 @@
 return {
+  config_dir = os.getenv("CONFIG_DIR") or (os.getenv("HOME") .. "/.config/sketchybar"),
   aerospace = os.getenv("AEROSPACE_BIN") or "/opt/homebrew/bin/aerospace",
   paddings = 4,
   group_paddings = 5,

@@ -26,6 +26,7 @@ local memory = sbar.add("item", "widgets.memory", {
     color = colors.with_alpha(colors.item.bg, 0.78),
     border_color = colors.with_alpha(colors.cyan, 0.18),
   },
+  click_script = settings.config_dir .. "/plugins/open_menu_extra.sh stats-ram",
 })
 
 local command = [[/usr/bin/memory_pressure | /usr/bin/awk '/System-wide memory free percentage:/ { gsub("%", "", $5); printf "%d", 100 - $5 }']]

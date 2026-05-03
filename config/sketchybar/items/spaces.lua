@@ -11,6 +11,7 @@ local aerospace = settings.aerospace
 local max_windows = settings.max_workspace_windows
 local workspaces = {}
 local current_workspace = nil
+local current_window_id = nil
 
 local function shell_quote(value)
   return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
@@ -55,7 +56,7 @@ local function parse_window_line(line)
   }
 end
 
-local function set_workspace_selected(id, selected)
+local function set_workspace_neutral(id)
   local refs = workspaces[id]
   if not refs then
     return
@@ -63,15 +64,36 @@ local function set_workspace_selected(id, selected)
 
   refs.label:set({
     icon = {
-      color = selected and colors.white or colors.with_alpha(colors.white, 0.55),
+      color = colors.with_alpha(colors.white, 0.55),
     },
   })
   refs.bracket:set({
     background = {
-      color = selected and colors.with_alpha(colors.purple, 0.64) or colors.with_alpha(colors.item.bg, 0.75),
-      border_color = selected and colors.with_alpha(colors.lavender, 0.32) or colors.with_alpha(colors.item.border, 0.7),
+      color = colors.with_alpha(colors.item.bg, 0.75),
+      border_color = colors.with_alpha(colors.item.border, 0.7),
     },
   })
+end
+
+local function refresh_focus()
+  local focused_workspace_output = io.popen(aerospace .. " list-workspaces --focused 2>/dev/null")
+  if focused_workspace_output then
+    local focused = focused_workspace_output:read("*l")
+    focused_workspace_output:close()
+    if focused and focused ~= "" then
+      current_workspace = trim(focused)
+    end
+  end
+
+  local focused_window_output = io.popen(aerospace .. " list-windows --focused --format '%{window-id}' 2>/dev/null")
+  if focused_window_output then
+    local focused = focused_window_output:read("*l")
+    focused_window_output:close()
+    current_window_id = focused and trim(focused) or nil
+    if current_window_id == "" then
+      current_window_id = nil
+    end
+  end
 end
 
 local function set_workspace_visible(id, visible)
@@ -111,7 +133,7 @@ local function refresh_workspace(id)
 
     local has_windows = #windows > 0
     set_workspace_visible(id, has_windows)
-    set_workspace_selected(id, id == current_workspace)
+    set_workspace_neutral(id)
 
     if not has_windows then
       refs.window_count = 0
@@ -122,21 +144,19 @@ local function refresh_workspace(id)
       local window = windows[index]
       if window then
         local icon = app_icons[window.app] or app_icons.Default or ":default:"
+        local focused = current_window_id ~= nil and window.window_id == current_window_id
         item:set({
           drawing = true,
           icon = {
             string = icon,
-            color = colors.with_alpha(colors.white, index == 1 and 0.92 or 0.62),
+            color = colors.with_alpha(colors.white, focused and 0.96 or 0.62),
           },
           label = {
             string = truncate(window.title, index == 1 and 22 or 14),
             drawing = true,
+            color = colors.with_alpha(colors.white, focused and 0.96 or 0.72),
           },
-          background = {
-            drawing = index == 1 and id == current_workspace,
-            color = colors.with_alpha(colors.white, 0.12),
-            border_width = 0,
-          },
+          background = { drawing = false },
         })
       else
         item:set({
@@ -156,7 +176,7 @@ local function refresh_workspace(id)
     refs.label:set({
       drawing = true,
       icon = {
-        color = id == current_workspace and colors.white or (#windows > 0 and colors.with_alpha(colors.white, 0.72) or colors.with_alpha(colors.white, 0.42)),
+        color = #windows > 0 and colors.with_alpha(colors.white, 0.55) or colors.with_alpha(colors.white, 0.42),
       },
     })
 
@@ -175,6 +195,7 @@ local function focus_workspace(id)
     return
   end
   current_workspace = id
+  refresh_focus()
   refresh_all()
 end
 
@@ -192,6 +213,7 @@ local function add_workspace(id)
         style = settings.font.style_map.Bold,
         size = 12.0,
       },
+      y_offset = -1,
       padding_left = 8,
       padding_right = 6,
     },
@@ -213,6 +235,7 @@ local function add_workspace(id)
           style = settings.font.style_map.Regular,
           size = 16.0,
         },
+        y_offset = -1,
         padding_left = index == 1 and 0 or 2,
         padding_right = 4,
       },
@@ -224,6 +247,7 @@ local function add_workspace(id)
           style = settings.font.style_map.Semibold,
           size = 11.0,
         },
+        y_offset = -1,
         padding_left = 0,
         padding_right = 8,
       },
@@ -244,6 +268,7 @@ local function add_workspace(id)
     icon = {
       string = icons.ellipsis,
       color = colors.with_alpha(colors.white, 0.58),
+      y_offset = -1,
       padding_left = 0,
       padding_right = 8,
     },
@@ -291,17 +316,10 @@ if next(workspaces) == nil then
   end
 end
 
-local focused_output = io.popen(aerospace .. " list-workspaces --focused 2>/dev/null")
-if focused_output then
-  local focused = focused_output:read("*l")
-  focused_output:close()
-  if focused and focused ~= "" then
-    current_workspace = trim(focused)
-  end
-end
+refresh_focus()
 
 for id, refs in pairs(workspaces) do
-  set_workspace_selected(id, id == current_workspace)
+  set_workspace_neutral(id)
   set_workspace_visible(id, false)
 end
 
@@ -312,14 +330,7 @@ local observer = sbar.add("item", "aerospace.observer", {
 })
 
 observer:subscribe({ "forced", "routine", "system_woke" }, function()
-  local focused_output = io.popen(aerospace .. " list-workspaces --focused 2>/dev/null")
-  if focused_output then
-    local focused = focused_output:read("*l")
-    focused_output:close()
-    if focused and focused ~= "" then
-      current_workspace = trim(focused)
-    end
-  end
+  refresh_focus()
   refresh_all()
 end)
 
