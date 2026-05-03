@@ -104,6 +104,9 @@
             gnused
             hcp
             htop
+            # Active AeroSpace stack: AeroSpace itself is a Homebrew cask, while
+            # borders and SketchyBar stay in Nix so their versions are pinned by the flake.
+            jankyborders
             jq
             lazygit
             libpq
@@ -119,11 +122,14 @@
             poppler
             protobuf
             ripgrep
-            skhd
+            # Legacy yabai/skhd stack: uncomment these two packages and the
+            # matching service/Home Manager lines below if switching back.
+            # skhd
+            sketchybar
             starship
             stripe-cli
             tmux
-            yabai
+            # yabai
             (callPackage ./cypher-shell.nix { })
             (texlive.combine { inherit (texlive) scheme-full; })
           ];
@@ -141,7 +147,16 @@
             enable = true;
             inherit user;
 
+            # Active AeroSpace stack: keep the tap explicit so the cask comes
+            # from the same source as `brew install --cask nikitabobko/tap/aerospace`.
+            taps = [
+              "nikitabobko/tap"
+            ];
+
             casks = [
+              # Active AeroSpace window manager. Installed with Homebrew so the
+              # app keeps the upstream cask behavior and update path.
+              "aerospace"
               "betterdisplay"
               "dbeaver-community"
               "raycast"
@@ -157,9 +172,14 @@
             };
           };
 
-          services.yabai.enable = true;
-          services.skhd.enable = true;
-          launchd.user.agents.skhd.serviceConfig.RunAtLoad = true;
+          # Active window manager is AeroSpace. It starts SketchyBar and
+          # JankyBorders from config/aerospace/aerospace.toml.
+          #
+          # Legacy yabai/skhd stack: uncomment these three lines and the
+          # matching packages/Home Manager links if switching back.
+          # services.yabai.enable = true;
+          # services.skhd.enable = true;
+          # launchd.user.agents.skhd.serviceConfig.RunAtLoad = true;
 
           programs.zsh.enable = false;
 
@@ -176,20 +196,22 @@
             fi
           '';
 
-          system.activationScripts.archiveBrewWindowManagerLaunchAgents.text = ''
-            echo "archiving stale Homebrew yabai/skhd LaunchAgents for ${user}..." >&2
-
-            for plist in \
-              ${home}/Library/LaunchAgents/com.koekeishiya.yabai.plist \
-              ${home}/Library/LaunchAgents/com.koekeishiya.skhd.plist \
-              ${home}/Library/LaunchAgents/com.asmvik.yabai.plist \
-              ${home}/Library/LaunchAgents/com.asmvik.skhd.plist; do
-              if [ -e "$plist" ]; then
-                mv -f "$plist" "$plist.before-nix-darwin"
-                chown ${user}:staff "$plist.before-nix-darwin"
-              fi
-            done
-          '';
+          # Legacy yabai/skhd migration helper. Keep commented while AeroSpace
+          # is active; uncomment only when actively migrating brew-managed yabai/skhd again.
+          # system.activationScripts.archiveBrewWindowManagerLaunchAgents.text = ''
+          #   echo "archiving stale Homebrew yabai/skhd LaunchAgents for ${user}..." >&2
+          #
+          #   for plist in \
+          #     ${home}/Library/LaunchAgents/com.koekeishiya.yabai.plist \
+          #     ${home}/Library/LaunchAgents/com.koekeishiya.skhd.plist \
+          #     ${home}/Library/LaunchAgents/com.asmvik.yabai.plist \
+          #     ${home}/Library/LaunchAgents/com.asmvik.skhd.plist; do
+          #     if [ -e "$plist" ]; then
+          #       mv -f "$plist" "$plist.before-nix-darwin"
+          #       chown ${user}:staff "$plist.before-nix-darwin"
+          #     fi
+          #   done
+          # '';
 
           system.activationScripts.tmuxPluginManager.text = ''
             echo "configuring tmux plugin manager for ${user}..." >&2
@@ -228,6 +250,12 @@
 
             CustomUserPreferences = {
               NSGlobalDomain = {
+                # Active SketchyBar stack: paired with system.defaults.NSGlobalDomain._HIHideMenuBar
+                # to make "Automatically hide and show the menu bar" behave like "Always".
+                AppleMenuBarVisibleInFullscreen = false;
+                # Active AeroSpace stack: recommended by AeroSpace so windows can
+                # be dragged by gesture from anywhere in the window.
+                NSWindowShouldDragOnGesture = true;
                 "com.apple.mouse.linear" = true;
               };
 
@@ -347,7 +375,8 @@
               NSAutomaticDashSubstitutionEnabled = true;
               NSAutomaticPeriodSubstitutionEnabled = true;
               NSAutomaticQuoteSubstitutionEnabled = true;
-              _HIHideMenuBar = false;
+              # Active SketchyBar stack: auto-hide the default macOS menu bar.
+              _HIHideMenuBar = true;
               "com.apple.springing.delay" = 0.5;
               "com.apple.springing.enabled" = true;
               "com.apple.swipescrolldirection" = true;

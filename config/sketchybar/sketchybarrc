@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Active SketchyBar config for the AeroSpace stack.
+# AeroSpace starts SketchyBar and triggers aerospace_workspace_change.
+
+CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
+AEROSPACE_BIN="${AEROSPACE_BIN:-/opt/homebrew/bin/aerospace}"
+SKETCHYBAR_BIN="${SKETCHYBAR_BIN:-/run/current-system/sw/bin/sketchybar}"
+
+"$SKETCHYBAR_BIN" --bar \
+  position=top \
+  height=32 \
+  color=0xff181926 \
+  shadow=off \
+  sticky=on
+
+"$SKETCHYBAR_BIN" --default \
+  icon.drawing=off \
+  label.font="JetBrainsMono Nerd Font:Semibold:13.0" \
+  label.color=0xffcad3f5 \
+  label.padding_left=8 \
+  label.padding_right=8 \
+  background.height=22 \
+  background.corner_radius=5 \
+  background.color=0xff494d64 \
+  background.drawing=off \
+  padding_left=3 \
+  padding_right=3
+
+"$SKETCHYBAR_BIN" --add event aerospace_workspace_change
+
+# Keep reloads idempotent when sketchybarrc is sourced more than once.
+"$SKETCHYBAR_BIN" --remove '/space\..*/' >/dev/null 2>&1
+
+for sid in $("$AEROSPACE_BIN" list-workspaces --all); do
+  "$SKETCHYBAR_BIN" --add item "space.$sid" left \
+    --subscribe "space.$sid" aerospace_workspace_change \
+    --set "space.$sid" \
+    label="$sid" \
+    click_script="$AEROSPACE_BIN workspace $sid" \
+    script="$CONFIG_DIR/plugins/aerospace.sh $sid"
+done
+
+focused_workspace="$("$AEROSPACE_BIN" list-workspaces --focused 2>/dev/null | head -n 1)"
+if [ -n "$focused_workspace" ]; then
+  "$SKETCHYBAR_BIN" --trigger aerospace_workspace_change FOCUSED_WORKSPACE="$focused_workspace"
+fi

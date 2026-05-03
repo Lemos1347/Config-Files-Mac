@@ -1,0 +1,149 @@
+# Active window manager: AeroSpace.
+# Legacy yabai/skhd config is kept commented in flake.nix, home.nix,
+# config/skhd/skhdrc, and config/yabai/yabairc for an easy switch back.
+
+config-version = 2
+
+# Active AeroSpace stack: start at login and let AeroSpace own the lifecycle
+# for the bar and focused-window borders.
+start-at-login = true
+
+# Active AeroSpace stack: start Nix-installed JankyBorders and SketchyBar.
+after-startup-command = [
+  'exec-and-forget /run/current-system/sw/bin/borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0',
+  'exec-and-forget /run/current-system/sw/bin/sketchybar',
+]
+
+# Active SketchyBar integration: notify the bar whenever AeroSpace changes workspaces.
+exec-on-workspace-change = [
+  '/bin/bash',
+  '-c',
+  '/run/current-system/sw/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+]
+
+# Mirrors the old yabai BSP feel: tiled windows, small gaps, and mouse follows focus.
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+accordion-padding = 30
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+automatically-unhide-macos-hidden-apps = false
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+[gaps]
+inner.horizontal = 3
+inner.vertical = 3
+outer.left = 3
+outer.bottom = 3
+outer.top = 3
+outer.right = 3
+
+[mode.main.binding]
+# Changing window focus. Legacy skhd/yabai: alt-h/j/k/l.
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# Changing focused monitor. Legacy skhd/yabai: alt-q/e.
+alt-q = 'focus-monitor --wrap-around left'
+alt-e = 'focus-monitor --wrap-around right'
+
+# Modifying layout. Some yabai commands do not have exact AeroSpace equivalents;
+# these keep the same keys mapped to the closest AeroSpace behavior.
+alt-shift-r = 'layout tiles horizontal vertical'
+alt-shift-y = 'layout horizontal'
+alt-shift-x = 'layout vertical'
+alt-shift-t = 'layout floating tiling'
+
+# Modifying window size and shape. Legacy skhd/yabai: fullscreen and balance.
+alt-shift-m = 'fullscreen'
+alt-shift-e = 'balance-sizes'
+
+# Swapping windows. Legacy skhd/yabai: shift-alt-h/j/k/l.
+alt-shift-h = 'swap left'
+alt-shift-j = 'swap down'
+alt-shift-k = 'swap up'
+alt-shift-l = 'swap right'
+
+# Moving windows inside the workspace. Legacy skhd/yabai: ctrl-alt-h/j/k/l.
+ctrl-alt-h = 'move left'
+ctrl-alt-j = 'move down'
+ctrl-alt-k = 'move up'
+ctrl-alt-l = 'move right'
+
+# Toggle split/orientation. Legacy skhd/yabai: ctrl-alt-t.
+ctrl-alt-t = 'layout tiles horizontal vertical'
+
+# Move window to monitor. Legacy skhd/yabai: shift-alt-s/g.
+# Note: the old skhd config also reused shift-alt-s for resize; AeroSpace TOML
+# cannot bind one key twice, so shift-alt-s stays dedicated to monitor movement.
+alt-shift-s = 'move-node-to-monitor --focus-follows-window --wrap-around left'
+alt-shift-g = 'move-node-to-monitor --focus-follows-window --wrap-around right'
+
+# Move window to previous/next workspace. Legacy skhd/yabai: shift-alt-p/n.
+alt-shift-p = 'move-node-to-workspace --wrap-around prev'
+alt-shift-n = 'move-node-to-workspace --wrap-around next'
+
+# Move window to workspace number. Legacy skhd/yabai: shift-alt-1..9.
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-2 = 'move-node-to-workspace 2'
+alt-shift-3 = 'move-node-to-workspace 3'
+alt-shift-4 = 'move-node-to-workspace 4'
+alt-shift-5 = 'move-node-to-workspace 5'
+alt-shift-6 = 'move-node-to-workspace 6'
+alt-shift-7 = 'move-node-to-workspace 7'
+alt-shift-8 = 'move-node-to-workspace 8'
+alt-shift-9 = 'move-node-to-workspace 9'
+
+# Workspace focus. AeroSpace-native additions so workspaces can be entered directly.
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+alt-4 = 'workspace 4'
+alt-5 = 'workspace 5'
+alt-6 = 'workspace 6'
+alt-7 = 'workspace 7'
+alt-8 = 'workspace 8'
+alt-9 = 'workspace 9'
+
+# Resize approximations for the old yabai resize shortcuts.
+alt-shift-a = 'resize width +50'
+alt-shift-d = 'resize width +50'
+alt-shift-w = 'resize height +50'
+ctrl-shift-a = 'resize width -50'
+ctrl-shift-d = 'resize width -50'
+ctrl-shift-w = 'resize height -50'
+ctrl-shift-s = 'resize height -50'
+
+# Start/stop/restart equivalents. Legacy skhd/yabai: ctrl-alt-q/s/r.
+ctrl-alt-q = 'enable off'
+ctrl-alt-s = 'enable on'
+ctrl-alt-r = 'reload-config'
+
+# Note taking. Legacy skhd/yabai: alt-n.
+alt-n = 'exec-and-forget /Applications/kitty.app/Contents/MacOS/kitty --title "todo" --override background_opacity=.9 nvim ~/NoteTaking'
+
+# Service mode for AeroSpace-native maintenance commands.
+alt-shift-semicolon = 'mode service'
+
+[mode.service.binding]
+esc = ['reload-config', 'mode main']
+r = ['flatten-workspace-tree', 'mode main']
+f = ['layout floating tiling', 'mode main']
+backspace = ['close-all-windows-but-current', 'mode main']
+alt-shift-h = ['join-with left', 'mode main']
+alt-shift-j = ['join-with down', 'mode main']
+alt-shift-k = ['join-with up', 'mode main']
+alt-shift-l = ['join-with right', 'mode main']
+
+# Legacy yabai rules translated to AeroSpace floating callbacks where possible.
+# Sticky/layer-above behavior has no exact AeroSpace equivalent, so those apps float.
+[[on-window-detected]]
+if.window-title-regex-substring = '^todo$'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-name-regex-substring = 'Ajustes do Sistema|System Settings|Calculadora|Calculator|Karabiner-Elements|QuickTime Player|Finder|YouTube Music|Spotify|Telegram|Pré-Visualização|Preview|FaceTime|WebStorm|JetBrains Toolbox|PyCharm'
+run = 'layout floating'
