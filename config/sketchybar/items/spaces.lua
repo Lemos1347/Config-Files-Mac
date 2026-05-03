@@ -9,7 +9,9 @@ end
 
 local aerospace = settings.aerospace
 local max_windows = settings.max_workspace_windows
+local compact_workspace_label_monitors = settings.compact_workspace_label_monitors or {}
 local workspaces = {}
+local workspace_monitors = {}
 local current_workspace = nil
 local current_window_id = nil
 
@@ -38,7 +40,11 @@ local function split_lines(output)
 end
 
 local function parse_window_line(line)
-  local app, title, window_id = line:match("([^\t]*)\t([^\t]*)\t([^\t]*)")
+  local app, title, window_id, monitor = line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+  if not app then
+    app, title, window_id = line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)$")
+  end
+
   app = trim(app)
   title = trim(title)
 
@@ -53,7 +59,52 @@ local function parse_window_line(line)
     app = app,
     title = title,
     window_id = trim(window_id),
+    monitor = trim(monitor),
   }
+end
+
+local function parse_workspace_monitor_line(line)
+  local workspace, monitor = line:match("^([^\t]+)\t(.+)$")
+  if not workspace or not monitor then
+    return nil, nil
+  end
+
+  return trim(workspace), trim(monitor)
+end
+
+local function refresh_workspace_monitors()
+  local command = aerospace .. " list-workspaces --all --format '%{workspace}\t%{monitor-name}' 2>/dev/null"
+  local output = io.popen(command)
+  if not output then
+    return
+  end
+
+  local next_monitors = {}
+  for line in output:lines() do
+    local workspace, monitor = parse_workspace_monitor_line(line)
+    if workspace and monitor then
+      next_monitors[workspace] = monitor
+    end
+  end
+  output:close()
+
+  if next(next_monitors) ~= nil then
+    workspace_monitors = next_monitors
+  end
+end
+
+local function workspace_uses_compact_labels(id, windows)
+  local monitor = workspace_monitors[id]
+  if not monitor or monitor == "" then
+    for _, window in ipairs(windows or {}) do
+      if window.monitor and window.monitor ~= "" then
+        monitor = window.monitor
+        break
+      end
+    end
+  end
+
+  return monitor ~= nil and compact_workspace_label_monitors[monitor] == true
 end
 
 local function set_workspace_neutral(id)
@@ -123,7 +174,7 @@ local function refresh_workspace(id)
   local command = aerospace
     .. " list-windows --workspace "
     .. shell_quote(id)
-    .. " --format '%{app-name}\t%{window-title}\t%{window-id}'"
+    .. " --format '%{app-name}\t%{window-title}\t%{window-id}\t%{monitor-name}'"
 
   sbar.exec(command, function(output)
     local windows = {}
@@ -140,6 +191,8 @@ local function refresh_workspace(id)
       return
     end
 
+    local compact_labels = workspace_uses_compact_labels(id, windows)
+
     for index, item in ipairs(refs.apps) do
       local window = windows[index]
       if window then
@@ -150,10 +203,11 @@ local function refresh_workspace(id)
           icon = {
             string = icon,
             color = colors.with_alpha(colors.white, focused and 0.96 or 0.62),
+            padding_right = compact_labels and 7 or 4,
           },
           label = {
-            string = truncate(window.title, index == 1 and 22 or 14),
-            drawing = true,
+            string = compact_labels and "" or truncate(window.title, index == 1 and 22 or 14),
+            drawing = not compact_labels,
             color = colors.with_alpha(colors.white, focused and 0.96 or 0.72),
           },
           background = { drawing = false },
@@ -185,6 +239,7 @@ local function refresh_workspace(id)
 end
 
 local function refresh_all()
+  refresh_workspace_monitors()
   for id, _ in pairs(workspaces) do
     refresh_workspace(id)
   end

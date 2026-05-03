@@ -44,9 +44,9 @@ inner.vertical = 3
 outer.left = 3
 outer.bottom = 3
 # Active SketchyBar stack: reserve space for the rounded 34px top bar plus margins
-# and a visible gap between the bar and tiled windows,
-# otherwise tiled windows fill the whole monitor and cover the bar.
-outer.top = 42
+# and a visible gap between the bar and tiled windows. The built-in display has
+# less vertical room, so keep a much smaller managed-window gap there.
+outer.top = [{ monitor."Built-in Retina Display" = 6 }, 42]
 outer.right = 3
 
 [mode.main.binding]
@@ -119,6 +119,9 @@ alt-6 = 'workspace 6'
 alt-7 = 'workspace 7'
 alt-8 = 'workspace 8'
 alt-9 = 'workspace 9'
+
+alt-tab = 'move-workspace-to-monitor next'
+alt-shift-tab = 'move-workspace-to-monitor prev'
 
 # Resize approximations for the old yabai resize shortcuts.
 alt-shift-a = 'resize width +50'

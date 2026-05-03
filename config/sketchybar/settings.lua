@@ -4,6 +4,9 @@ return {
   paddings = 4,
   group_paddings = 5,
   max_workspace_windows = 4,
+  compact_workspace_label_monitors = {
+    ["Built-in Retina Display"] = true,
+  },
 
   font = {
     text = "JetBrainsMono Nerd Font",
