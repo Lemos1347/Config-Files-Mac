@@ -9,9 +9,11 @@ config-version = 2
 start-at-login = true
 
 # Active AeroSpace stack: start Nix-installed JankyBorders and SketchyBar.
+# Keep these idempotent because AeroSpace runs after-startup-command every time
+# the app starts.
 after-startup-command = [
-  'exec-and-forget /run/current-system/sw/bin/borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0',
-  'exec-and-forget /run/current-system/sw/bin/sketchybar',
+  'exec-and-forget /bin/bash -lc "pkill -x borders 2>/dev/null || true; /run/current-system/sw/bin/borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0"',
+  'exec-and-forget /run/current-system/sw/bin/sketchybar --reload',
 ]
 
 # Active SketchyBar integration: notify the bar whenever AeroSpace changes workspaces.
@@ -27,7 +29,10 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 accordion-padding = 30
-on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+# Legacy yabai had mouse_follows_focus. Leave AeroSpace mouse movement disabled
+# for now because it can amplify focus/monitor loops when another window manager
+# was still running.
+# on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 automatically-unhide-macos-hidden-apps = false
 persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
@@ -36,7 +41,9 @@ inner.horizontal = 3
 inner.vertical = 3
 outer.left = 3
 outer.bottom = 3
-outer.top = 3
+# Active SketchyBar stack: reserve space for the 32px top bar plus a small gap,
+# otherwise tiled windows fill the whole monitor and cover the bar.
+outer.top = 36
 outer.right = 3
 
 [mode.main.binding]

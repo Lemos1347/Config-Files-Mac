@@ -21,7 +21,7 @@
       home = "/Users/${user}";
 
       configuration =
-        { pkgs, ... }:
+        { lib, pkgs, ... }:
         let
           jetbrainsMonoNerdFont = pkgs.stdenvNoCC.mkDerivation {
             pname = "jetbrains-mono-nerd-font";
@@ -183,6 +183,54 @@
 
           programs.zsh.enable = false;
 
+          # Active AeroSpace stack: make sure old yabai/skhd launch agents do
+          # not keep running after the switch. The files are archived, not deleted.
+          system.activationScripts.disableLegacyYabaiSkhd.text = ''
+            echo "disabling legacy yabai/skhd launch agents for ${user}..." >&2
+
+            uid="$(id -u ${user})"
+            for label in \
+              org.nixos.yabai \
+              org.nixos.skhd \
+              com.koekeishiya.yabai \
+              com.koekeishiya.skhd \
+              com.asmvik.yabai \
+              com.asmvik.skhd; do
+              launchctl bootout "gui/$uid/$label" 2>/dev/null || true
+            done
+
+            pkill -x -u ${user} yabai 2>/dev/null || true
+            pkill -x -u ${user} skhd 2>/dev/null || true
+
+            for plist in \
+              ${home}/Library/LaunchAgents/org.nixos.yabai.plist \
+              ${home}/Library/LaunchAgents/org.nixos.skhd.plist \
+              ${home}/Library/LaunchAgents/com.koekeishiya.yabai.plist \
+              ${home}/Library/LaunchAgents/com.koekeishiya.skhd.plist \
+              ${home}/Library/LaunchAgents/com.asmvik.yabai.plist \
+              ${home}/Library/LaunchAgents/com.asmvik.skhd.plist; do
+              if [ -e "$plist" ]; then
+                backup="$plist.before-aerospace"
+                if [ -e "$backup" ]; then
+                  backup="$backup.$(date +%Y%m%d%H%M%S)"
+                fi
+
+                mv -f "$plist" "$backup"
+                chown ${user}:staff "$backup"
+              fi
+            done
+          '';
+
+          # Active SketchyBar stack: set System Settings -> Menu Bar ->
+          # "Automatically hide and show the menu bar" to "Always".
+          # The defaults keys alone do not reliably update the visible System Settings state.
+          system.activationScripts.postActivation.text = lib.mkAfter ''
+            echo "configuring menu bar autohide for ${user}..." >&2
+            uid="$(id -u ${user})"
+            launchctl asuser "$uid" sudo --user=${user} -- /usr/bin/osascript -e 'tell application "System Events" to tell dock preferences to set autohide menu bar to true' || true
+            killall -qu ${user} SystemUIServer || true
+          '';
+
           system.activationScripts.miseInstall.text = ''
             echo "installing mise tools for ${user}..." >&2
 
@@ -250,12 +298,8 @@
 
             CustomUserPreferences = {
               NSGlobalDomain = {
-                # Active SketchyBar stack: paired with system.defaults.NSGlobalDomain._HIHideMenuBar
-                # to make "Automatically hide and show the menu bar" behave like "Always".
-                AppleMenuBarVisibleInFullscreen = false;
                 # Active AeroSpace stack: recommended by AeroSpace so windows can
                 # be dragged by gesture from anywhere in the window.
-                NSWindowShouldDragOnGesture = true;
                 "com.apple.mouse.linear" = true;
               };
 
@@ -375,8 +419,9 @@
               NSAutomaticDashSubstitutionEnabled = true;
               NSAutomaticPeriodSubstitutionEnabled = true;
               NSAutomaticQuoteSubstitutionEnabled = true;
-              # Active SketchyBar stack: auto-hide the default macOS menu bar.
-              _HIHideMenuBar = true;
+              # Active AeroSpace stack: official nix-darwin option for
+              # `defaults write -g NSWindowShouldDragOnGesture -bool true`.
+              NSWindowShouldDragOnGesture = true;
               "com.apple.springing.delay" = 0.5;
               "com.apple.springing.enabled" = true;
               "com.apple.swipescrolldirection" = true;

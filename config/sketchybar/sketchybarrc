@@ -9,7 +9,9 @@ SKETCHYBAR_BIN="${SKETCHYBAR_BIN:-/run/current-system/sw/bin/sketchybar}"
 
 "$SKETCHYBAR_BIN" --bar \
   position=top \
+  display=all \
   height=32 \
+  topmost=on \
   color=0xff181926 \
   shadow=off \
   sticky=on
