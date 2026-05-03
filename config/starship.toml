@@ -1,0 +1,23 @@
+[python]
+# Ativar o módulo Python somente se algum dos seguintes arquivos ou diretórios estiver presente
+detect_files = ["pyproject.toml", "requirements.txt", "*.py"]
+detect_folders = ["venv", ".venv"]
+
+[directory]
+fish_style_pwd_dir_length = 0  # Força o caminho completo a ser exibido
+truncate_to_repo = false       # Desativa a truncagem ao repositório git
+truncation_length = 0          # Desativa qualquer outra forma de truncagem
+
+[gcloud]
+disabled = false
+# Optional: Symbol to display before the account/project
+symbol = "🌐 "
+# Optional: Change the color
+style = "bold blue"
+format = 'on [$symbol$account(@$project )]($style)'
+
+[aws]
+disabled = false
+symbol = "☁️ "
+style = "bold yellow"
+format = 'on [$symbol($profile )(\($region\) )]($style)'

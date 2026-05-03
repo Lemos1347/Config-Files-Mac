@@ -1,0 +1,28 @@
+font-family = "JetbrainsMono Nerd Font Propo"
+# Already auto
+# bold_font = auto
+# italic_font      auto
+# bold_italic_font auto
+
+shell-integration-features = no-cursor,ssh-terminfo,ssh-env
+
+font-size = 16.0
+adjust-cell-height = 5%
+window-decoration = false
+macos-option-as-alt = true
+
+background = #000000
+foreground = #ffffff
+bold-color = #ffffff
+minimum-contrast = 1
+theme = deep
+window-colorspace = display-p3
+
+font-thicken = true
+font-thicken-strength = 100
+
+bold-color = #ffffff
+
+mouse-hide-while-typing = true
+
+keybind = shift+enter=text:\\\n\r

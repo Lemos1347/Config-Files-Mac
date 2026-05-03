@@ -1,0 +1,29 @@
+[tools]
+bats = "1.8.2"
+go = "1.23.9"
+java = "latest"
+"aqua:neovim/neovim" = "0.11.6"
+node = "23.9.0"
+shellcheck = "0.9.0"
+shfmt = "3.6.0"
+gcloud = "505.0.0"
+python = ["3.12.3", "3.9.19"]
+just = "latest"
+rust = "latest"
+uv = "latest"
+zoxide = "latest"
+zig = "latest"
+aws = { version = "latest", symlink_bins = "true" }
+pnpm = "latest"
+usage = "latest"
+terraform = "latest"
+eza = "latest"
+bat = "latest"
+bun = "latest"
+erlang = "latest"
+elixir = "latest"
+railway = "latest"
+yarn = "latest"
+
+[settings]
+idiomatic_version_file_enable_tools = ["python"]
