@@ -23,7 +23,7 @@ exec-on-workspace-change = [
   '/run/current-system/sw/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
-# Mirrors the old yabai BSP feel: tiled windows, small gaps, and mouse follows focus.
+# Mirrors the old yabai BSP feel: tiled windows, small gaps, and mouse follows monitor focus.
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
 default-root-container-layout = 'tiles'
@@ -31,10 +31,9 @@ default-root-container-orientation = 'auto'
 # Accordion reveal size. Larger values keep neighboring windows visible so the
 # focused window does not feel fullscreen.
 accordion-padding = 600
-# Legacy yabai had mouse_follows_focus. Leave AeroSpace mouse movement disabled
-# for now because it can amplify focus/monitor loops when another window manager
-# was still running.
-# on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+# Active AeroSpace stack: keep the cursor on the monitor AeroSpace just focused,
+# including when moving a workspace between monitors.
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 automatically-unhide-macos-hidden-apps = false
 persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
