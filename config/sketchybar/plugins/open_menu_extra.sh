@@ -4,6 +4,32 @@ set -euo pipefail
 
 target="${1:-}"
 
+print_window_positions() {
+  local module_cache="${TMPDIR:-/tmp}/sketchybar-swift-module-cache"
+  /bin/mkdir -p "$module_cache"
+
+  /usr/bin/swift -module-cache-path "$module_cache" - <<'SWIFT'
+import CoreGraphics
+import Foundation
+
+let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as NSArray? ?? []
+
+for case let window as NSDictionary in windows {
+    guard
+        let id = window[kCGWindowNumber] as? Int,
+        let bounds = window[kCGWindowBounds] as? NSDictionary,
+        let x = bounds["X"],
+        let y = bounds["Y"]
+    else {
+        continue
+    }
+
+    print("\(id)\t\(x)\t\(y)")
+}
+SWIFT
+}
+
 click_menu_extra() {
   local process_name="$1"
   local mode="$2"
@@ -83,6 +109,9 @@ case "$target" in
     ;;
   calendar)
     click_menu_extra "ControlCenter" "calendar" || /usr/bin/open -a Calendar
+    ;;
+  window-positions)
+    print_window_positions
     ;;
   *)
     exit 64

@@ -12,6 +12,7 @@ local max_windows = settings.max_workspace_windows
 local compact_workspace_label_monitors = settings.compact_workspace_label_monitors or {}
 local workspaces = {}
 local workspace_monitors = {}
+local window_positions = {}
 local current_workspace = nil
 local current_window_id = nil
 
@@ -41,9 +42,6 @@ end
 
 local function parse_window_line(line)
   local app, title, window_id, monitor = line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
-  if not app then
-    app, title, window_id = line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)$")
-  end
 
   app = trim(app)
   title = trim(title)
@@ -60,6 +58,19 @@ local function parse_window_line(line)
     title = title,
     window_id = trim(window_id),
     monitor = trim(monitor),
+  }
+end
+
+local function parse_position_line(line)
+  local window_id, x, y = line:match("^([^\t]*)\t([%-?%d%.]+)\t([%-?%d%.]+)$")
+  if not window_id then
+    return nil
+  end
+
+  return {
+    window_id = trim(window_id),
+    x = tonumber(x),
+    y = tonumber(y),
   }
 end
 
@@ -91,6 +102,46 @@ local function refresh_workspace_monitors()
   if next(next_monitors) ~= nil then
     workspace_monitors = next_monitors
   end
+end
+
+local function refresh_window_positions(callback)
+  local command = "/bin/bash " .. shell_quote(settings.config_dir .. "/plugins/open_menu_extra.sh") .. " window-positions"
+  sbar.exec(command, function(output)
+    local next_positions = {}
+    for _, line in ipairs(split_lines(output)) do
+      local position = parse_position_line(line)
+      if position and position.window_id ~= "" and position.x then
+        next_positions[position.window_id] = position
+      end
+    end
+
+    window_positions = next_positions
+    callback()
+  end)
+end
+
+local function attach_window_positions(windows)
+  for index, window in ipairs(windows) do
+    window.original_index = index
+
+    local position = window_positions[window.window_id]
+    if position then
+      window.x = position.x
+      window.y = position.y
+    end
+  end
+end
+
+local function sort_windows_by_position(windows)
+  table.sort(windows, function(left, right)
+    if left.x and right.x and left.x ~= right.x then
+      return left.x < right.x
+    end
+    if left.y and right.y and left.y ~= right.y then
+      return left.y < right.y
+    end
+    return (left.original_index or 0) < (right.original_index or 0)
+  end)
 end
 
 local function workspace_uses_compact_labels(id, windows)
@@ -180,6 +231,8 @@ local function refresh_workspace(id)
     for _, line in ipairs(split_lines(output)) do
       table.insert(windows, parse_window_line(line))
     end
+    attach_window_positions(windows)
+    sort_windows_by_position(windows)
 
     local has_windows = #windows > 0
     set_workspace_visible(id, has_windows)
@@ -239,9 +292,11 @@ end
 
 local function refresh_all()
   refresh_workspace_monitors()
-  for id, _ in pairs(workspaces) do
-    refresh_workspace(id)
-  end
+  refresh_window_positions(function()
+    for id, _ in pairs(workspaces) do
+      refresh_workspace(id)
+    end
+  end)
 end
 
 local function focus_workspace(id)
