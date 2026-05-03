@@ -78,14 +78,17 @@ alt-shift-j = 'swap down'
 alt-shift-k = 'swap up'
 alt-shift-l = 'swap right'
 
+# Joining windows into nested containers. Useful for building 2x2 layouts.
+ctrl-shift-h = 'join-with left'
+ctrl-shift-j = 'join-with down'
+ctrl-shift-k = 'join-with up'
+ctrl-shift-l = 'join-with right'
+
 # Moving windows inside the workspace. Legacy skhd/yabai: ctrl-alt-h/j/k/l.
 ctrl-alt-h = 'move left'
 ctrl-alt-j = 'move down'
 ctrl-alt-k = 'move up'
 ctrl-alt-l = 'move right'
-
-# Toggle split/orientation. Legacy skhd/yabai: ctrl-alt-t.
-ctrl-alt-t = 'layout tiles horizontal vertical'
 
 # Move window to monitor. Legacy skhd/yabai: shift-alt-s/g.
 # Note: the old skhd config also reused shift-alt-s for resize; AeroSpace TOML
@@ -123,13 +126,10 @@ alt-tab = 'move-workspace-to-monitor next'
 alt-shift-tab = 'move-workspace-to-monitor prev'
 
 # Resize approximations for the old yabai resize shortcuts.
-alt-shift-a = 'resize width +50'
 alt-shift-d = 'resize width +50'
 alt-shift-w = 'resize height +50'
-ctrl-shift-a = 'resize width -50'
 ctrl-shift-d = 'resize width -50'
 ctrl-shift-w = 'resize height -50'
-ctrl-shift-s = 'resize height -50'
 
 # Start/stop/restart equivalents. Legacy skhd/yabai: ctrl-alt-q/s/r.
 ctrl-alt-q = 'enable off'
