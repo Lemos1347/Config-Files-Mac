@@ -28,7 +28,9 @@ enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
 default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
-accordion-padding = 30
+# Accordion reveal size. Larger values keep neighboring windows visible so the
+# focused window does not feel fullscreen.
+accordion-padding = 600
 # Legacy yabai had mouse_follows_focus. Leave AeroSpace mouse movement disabled
 # for now because it can amplify focus/monitor loops when another window manager
 # was still running.
@@ -64,6 +66,8 @@ alt-shift-r = 'layout tiles horizontal vertical'
 alt-shift-y = 'layout horizontal'
 alt-shift-x = 'layout vertical'
 alt-shift-t = 'layout floating tiling'
+# Toggle the focused container between regular tiling and accordion mode.
+alt-shift-g = 'layout tiles accordion'
 
 # Modifying window size and shape. Legacy skhd/yabai: fullscreen and balance.
 alt-shift-m = 'fullscreen'
@@ -86,9 +90,9 @@ ctrl-alt-t = 'layout tiles horizontal vertical'
 
 # Move window to monitor. Legacy skhd/yabai: shift-alt-s/g.
 # Note: the old skhd config also reused shift-alt-s for resize; AeroSpace TOML
-# cannot bind one key twice, so shift-alt-s stays dedicated to monitor movement.
+# cannot bind one key twice, so shift-alt-g is now used for accordion toggle.
 alt-shift-s = 'move-node-to-monitor --focus-follows-window --wrap-around left'
-alt-shift-g = 'move-node-to-monitor --focus-follows-window --wrap-around right'
+# alt-shift-g = 'move-node-to-monitor --focus-follows-window --wrap-around right'
 
 # Move window to previous/next workspace. Legacy skhd/yabai: shift-alt-p/n.
 alt-shift-p = 'move-node-to-workspace --wrap-around prev'
