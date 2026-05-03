@@ -18,13 +18,9 @@
     "ghostty/config".source = ./config/ghostty/config;
     "kitty/kitty.conf".source = ./config/kitty/kitty.conf;
     "mise/config.toml".source = ./config/mise/config.toml;
-    "sketchybar/sketchybarrc" = {
-      source = ./config/sketchybar/sketchybarrc;
-      executable = true;
-    };
-    "sketchybar/plugins/aerospace.sh" = {
-      source = ./config/sketchybar/plugins/aerospace.sh;
-      executable = true;
+    "sketchybar" = {
+      source = ./config/sketchybar;
+      recursive = true;
     };
     "starship.toml".source = ./config/starship.toml;
 

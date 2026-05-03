@@ -126,6 +126,9 @@
             # matching service/Home Manager lines below if switching back.
             # skhd
             sketchybar
+            sketchybar-app-font
+            sbarlua
+            sbarlua.luaModule
             starship
             stripe-cli
             tmux
@@ -135,11 +138,17 @@
           ];
 
           environment.pathsToLink = [
+            "/lib/lua"
+            "/lib/sketchybar-app-font"
             "/share/oh-my-zsh"
             "/share/oh-my-zsh-custom"
+            "/share/lua"
           ];
 
-          fonts.packages = [ jetbrainsMonoNerdFont ];
+          fonts.packages = [
+            jetbrainsMonoNerdFont
+            pkgs.sketchybar-app-font
+          ];
 
           # GUI apps are managed through Homebrew casks for native /Applications
           # installation and auto-update behavior.
