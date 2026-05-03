@@ -419,6 +419,8 @@
               NSAutomaticDashSubstitutionEnabled = true;
               NSAutomaticPeriodSubstitutionEnabled = true;
               NSAutomaticQuoteSubstitutionEnabled = true;
+              # Active SketchyBar stack: official nix-darwin menu bar autohide option.
+              _HIHideMenuBar = true;
               # Active AeroSpace stack: official nix-darwin option for
               # `defaults write -g NSWindowShouldDragOnGesture -bool true`.
               NSWindowShouldDragOnGesture = true;
