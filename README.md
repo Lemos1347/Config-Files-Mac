@@ -15,6 +15,18 @@ This repository is currently tailored for:
 
 Review those values in `flake.nix` before applying it on a different machine.
 
+> [!NOTE]
+> When you run darwin-rebuild switch, it needs to know which one to build. It picks one in this order:
+>
+> 1. The name you specify after # in --flake .#name
+> 2. Otherwise, it falls back to your machine's hostname
+>
+> If you want to use the alias `nix-rebuild`, change the `darwinConfigurations` to your machine's hostname. You can check it with this command:
+>
+> ```sh
+> scutil --get LocalHostName
+> ```
+
 ## What It Manages
 
 - macOS defaults, Dock behavior, keyboard repeat settings, pointer settings, and launchd services.
@@ -26,13 +38,13 @@ Review those values in `flake.nix` before applying it on a different machine.
 
 ## Layout
 
-| Path | Purpose |
-| --- | --- |
-| `flake.nix` | nix-darwin system configuration, packages, services, Homebrew, and Home Manager wiring. |
-| `home.nix` | Home Manager file mappings into `$HOME`. |
-| `dotfiles/` | Files linked directly into `$HOME`, such as `.zshrc`, `.zprofile`, `.tmux.conf`, and `.p10k.zsh`. |
-| `config/` | Managed subset of `~/.config`, including Ghostty, Kitty, mise, skhd, yabai, and Starship. |
-| `cypher-shell.nix` | Custom package definition used by the flake. |
+| Path               | Purpose                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| `flake.nix`        | nix-darwin system configuration, packages, services, Homebrew, and Home Manager wiring.           |
+| `home.nix`         | Home Manager file mappings into `$HOME`.                                                          |
+| `dotfiles/`        | Files linked directly into `$HOME`, such as `.zshrc`, `.zprofile`, `.tmux.conf`, and `.p10k.zsh`. |
+| `config/`          | Managed subset of `~/.config`, including Ghostty, Kitty, mise, skhd, yabai, and Starship.         |
+| `cypher-shell.nix` | Custom package definition used by the flake.                                                      |
 
 ## Installation
 
@@ -58,13 +70,7 @@ cd ~/.config/nix-darwin-config
 Build the configuration first:
 
 ```sh
-nix build .#darwinConfigurations.MacBook-Pro-de-Henrique.system
-```
-
-Apply it:
-
-```sh
-sudo ./result/sw/bin/darwin-rebuild switch --flake .#MacBook-Pro-de-Henrique
+sudo -H nix run nix-darwin -- switch --flake .
 ```
 
 After the first successful switch, future rebuilds can use:
