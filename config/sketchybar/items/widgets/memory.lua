@@ -23,8 +23,7 @@ local memory = sbar.add("item", "widgets.memory", {
     padding_right = 8,
   },
   background = {
-    color = colors.with_alpha(colors.item.bg, 0.78),
-    border_color = colors.with_alpha(colors.cyan, 0.18),
+    drawing = false,
   },
   click_script = settings.config_dir .. "/plugins/open_menu_extra.sh stats-ram",
 })
@@ -46,7 +45,6 @@ local function update()
     memory:set({
       icon = { color = color },
       label = { string = "RAM " .. used .. "%" },
-      background = { border_color = colors.with_alpha(color, 0.26) },
     })
   end)
 end

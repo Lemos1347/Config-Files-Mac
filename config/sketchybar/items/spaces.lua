@@ -120,8 +120,7 @@ local function set_workspace_neutral(id)
   })
   refs.bracket:set({
     background = {
-      color = colors.with_alpha(colors.item.bg, 0.75),
-      border_color = colors.with_alpha(colors.item.border, 0.7),
+      drawing = false,
     },
   })
 end
@@ -268,7 +267,7 @@ local function add_workspace(id)
         style = settings.font.style_map.Bold,
         size = 12.0,
       },
-      y_offset = -1,
+      y_offset = 0,
       padding_left = 8,
       padding_right = 6,
     },
@@ -288,9 +287,9 @@ local function add_workspace(id)
         font = {
           family = settings.font.app,
           style = settings.font.style_map.Regular,
-          size = 16.0,
+          size = 15.0,
         },
-        y_offset = -1,
+        y_offset = 0,
         padding_left = index == 1 and 0 or 2,
         padding_right = 4,
       },
@@ -302,7 +301,7 @@ local function add_workspace(id)
           style = settings.font.style_map.Semibold,
           size = 11.0,
         },
-        y_offset = -1,
+        y_offset = 0,
         padding_left = 0,
         padding_right = 8,
       },
@@ -323,7 +322,7 @@ local function add_workspace(id)
     icon = {
       string = icons.ellipsis,
       color = colors.with_alpha(colors.white, 0.58),
-      y_offset = -1,
+      y_offset = 0,
       padding_left = 0,
       padding_right = 8,
     },
@@ -335,11 +334,7 @@ local function add_workspace(id)
 
   group.bracket = sbar.add("bracket", "space." .. id .. ".bracket", members, {
     background = {
-      color = colors.with_alpha(colors.item.bg, 0.75),
-      border_color = colors.with_alpha(colors.item.border, 0.7),
-      height = 28,
-      corner_radius = 14,
-      border_width = 1,
+      drawing = false,
     },
   })
 

@@ -23,8 +23,7 @@ local cpu = sbar.add("item", "widgets.cpu", {
     padding_right = 8,
   },
   background = {
-    color = colors.with_alpha(colors.item.bg, 0.78),
-    border_color = colors.with_alpha(colors.blue, 0.18),
+    drawing = false,
   },
   click_script = settings.config_dir .. "/plugins/open_menu_extra.sh stats-cpu",
 })
@@ -46,7 +45,6 @@ local function update()
     cpu:set({
       icon = { color = color },
       label = { string = "CPU " .. load .. "%" },
-      background = { border_color = colors.with_alpha(color, 0.26) },
     })
   end)
 end

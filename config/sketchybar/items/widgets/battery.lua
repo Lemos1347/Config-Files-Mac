@@ -28,8 +28,7 @@ local battery = sbar.add("item", "widgets.battery", {
     padding_right = 8,
   },
   background = {
-    color = colors.with_alpha(colors.item.bg, 0.78),
-    border_color = colors.with_alpha(colors.green, 0.18),
+    drawing = false,
   },
   click_script = settings.config_dir .. "/plugins/open_menu_extra.sh aldente",
 })
@@ -62,7 +61,6 @@ local function update()
         color = color,
       },
       label = { string = charge .. "%" },
-      background = { border_color = colors.with_alpha(color, 0.26) },
     })
   end)
 end
