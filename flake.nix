@@ -78,7 +78,12 @@
             home = /Users/henriquematias;
           };
 
-          security.pam.services.sudo_local.touchIdAuth = true;
+          security.pam.services.sudo_local = {
+            touchIdAuth = true;
+            # Reattach tmux/screen sessions to the user bootstrap session so
+            # Touch ID works for sudo inside long-lived terminal multiplexers.
+            reattach = true;
+          };
 
           # Ensure determinate systems manages installation and updates
           nix.enable = false;
