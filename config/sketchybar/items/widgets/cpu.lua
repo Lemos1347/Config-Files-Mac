@@ -4,8 +4,6 @@ local settings = require("settings")
 
 local cpu = sbar.add("item", "widgets.cpu", {
   position = "right",
-  updates = true,
-  update_freq = 5,
   icon = {
     string = icons.cpu,
     color = colors.blue,
@@ -28,26 +26,30 @@ local cpu = sbar.add("item", "widgets.cpu", {
   click_script = settings.config_dir .. "/plugins/open_menu_extra.sh stats-cpu",
 })
 
-local command = [[/usr/bin/top -l 1 -s 0 -n 0 | /usr/bin/awk -F'[:,%]+' '/CPU usage/ { printf "%d", $2 + $3 + 0.5 }']]
-
-local function update()
-  sbar.exec(command, function(output)
-    local load = tonumber(output) or 0
-    local color = colors.blue
-    if load >= 80 then
-      color = colors.red
-    elseif load >= 60 then
-      color = colors.orange
-    elseif load >= 35 then
-      color = colors.yellow
-    end
-
-    cpu:set({
-      icon = { color = color },
-      label = { string = "CPU " .. load .. "%" },
-    })
-  end)
+local function parse_percent(value)
+  return tonumber(tostring(value or ""):match("[-%d%.]+"))
 end
 
-cpu:subscribe({ "forced", "routine", "system_woke" }, update)
-update()
+local function update(env)
+  local load = parse_percent(env.CPU_USAGE)
+  if not load then
+    return
+  end
+
+  local rounded = math.floor(load + 0.5)
+  local color = colors.blue
+  if rounded >= 80 then
+    color = colors.red
+  elseif rounded >= 60 then
+    color = colors.orange
+  elseif rounded >= 35 then
+    color = colors.yellow
+  end
+
+  cpu:set({
+    icon = { color = color },
+    label = { string = "CPU " .. rounded .. "%" },
+  })
+end
+
+cpu:subscribe("system_stats", update)

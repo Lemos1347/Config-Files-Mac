@@ -9,12 +9,16 @@ end
 
 local aerospace = settings.aerospace
 local max_windows = settings.max_workspace_windows
+local workspace_refresh_interval = settings.workspace_refresh_interval or 10
+local sort_workspace_windows_by_position = settings.sort_workspace_windows_by_position == true
 local compact_workspace_label_monitors = settings.compact_workspace_label_monitors or {}
 local workspaces = {}
 local workspace_monitors = {}
 local window_positions = {}
 local current_workspace = nil
 local current_window_id = nil
+local refresh_in_flight = false
+local refresh_again = false
 
 local function shell_quote(value)
   return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
@@ -42,6 +46,9 @@ end
 
 local function parse_window_line(line)
   local app, title, window_id, monitor = line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+  if not app then
+    return nil
+  end
 
   app = trim(app)
   title = trim(title)
@@ -59,6 +66,18 @@ local function parse_window_line(line)
     window_id = trim(window_id),
     monitor = trim(monitor),
   }
+end
+
+local function parse_workspace_window_line(line)
+  local workspace, app, title, window_id, monitor =
+    line:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+
+  if not workspace then
+    return nil, nil
+  end
+
+  local window = parse_window_line(table.concat({ app, title, window_id, monitor }, "\t"))
+  return trim(workspace), window
 end
 
 local function parse_position_line(line)
@@ -105,6 +124,12 @@ local function refresh_workspace_monitors()
 end
 
 local function refresh_window_positions(callback)
+  if not sort_workspace_windows_by_position then
+    window_positions = {}
+    callback()
+    return
+  end
+
   local command = "/bin/bash " .. shell_quote(settings.config_dir .. "/plugins/open_menu_extra.sh") .. " window-positions"
   sbar.exec(command, function(output)
     local next_positions = {}
@@ -177,22 +202,31 @@ local function set_workspace_neutral(id)
 end
 
 local function refresh_focus()
-  local focused_workspace_output = io.popen(aerospace .. " list-workspaces --focused 2>/dev/null")
-  if focused_workspace_output then
-    local focused = focused_workspace_output:read("*l")
-    focused_workspace_output:close()
-    if focused and focused ~= "" then
-      current_workspace = trim(focused)
-    end
-  end
+  current_window_id = nil
 
-  local focused_window_output = io.popen(aerospace .. " list-windows --focused --format '%{window-id}' 2>/dev/null")
+  local focused_window_output =
+    io.popen(aerospace .. " list-windows --focused --format '%{workspace}%{tab}%{window-id}' 2>/dev/null")
   if focused_window_output then
     local focused = focused_window_output:read("*l")
     focused_window_output:close()
-    current_window_id = focused and trim(focused) or nil
+    local workspace, window_id = tostring(focused or ""):match("^([^\t]+)\t([^\t]+)$")
+    if workspace and workspace ~= "" then
+      current_workspace = trim(workspace)
+    end
+    current_window_id = window_id and trim(window_id) or nil
     if current_window_id == "" then
       current_window_id = nil
+    end
+  end
+
+  if not current_workspace or current_workspace == "" then
+    local focused_workspace_output = io.popen(aerospace .. " list-workspaces --focused 2>/dev/null")
+    if focused_workspace_output then
+      local focused = focused_workspace_output:read("*l")
+      focused_workspace_output:close()
+      if focused and focused ~= "" then
+        current_workspace = trim(focused)
+      end
     end
   end
 end
@@ -215,87 +249,118 @@ local function set_workspace_visible(id, visible)
   end
 end
 
-local function refresh_workspace(id)
+local function render_workspace(id, windows)
   local refs = workspaces[id]
   if not refs then
     return
   end
 
+  windows = windows or {}
+  attach_window_positions(windows)
+  if sort_workspace_windows_by_position then
+    sort_windows_by_position(windows)
+  end
+
+  local has_windows = #windows > 0
+  set_workspace_visible(id, has_windows)
+  set_workspace_neutral(id)
+
+  if not has_windows then
+    refs.window_count = 0
+    return
+  end
+
+  local compact_labels = workspace_uses_compact_labels(id, windows)
+
+  for index, item in ipairs(refs.apps) do
+    local window = windows[index]
+    if window then
+      local icon = app_icons[window.app] or app_icons.Default or ":default:"
+      local focused = current_window_id ~= nil and window.window_id == current_window_id
+      item:set({
+        drawing = true,
+        icon = {
+          string = icon,
+          color = colors.with_alpha(colors.white, focused and 0.96 or 0.62),
+          padding_right = compact_labels and 7 or 4,
+        },
+        label = {
+          string = compact_labels and "" or truncate(window.title, index == 1 and 22 or 14),
+          drawing = not compact_labels,
+          color = colors.with_alpha(colors.white, focused and 0.96 or 0.72),
+        },
+        background = { drawing = false },
+      })
+    else
+      item:set({
+        drawing = false,
+        icon = { string = "" },
+        label = { string = "", drawing = false },
+        background = { drawing = false },
+      })
+    end
+  end
+
+  local overflow = #windows > max_windows
+  refs.ellipsis:set({
+    drawing = overflow,
+    icon = { string = overflow and icons.ellipsis or "" },
+  })
+  refs.label:set({
+    drawing = true,
+    icon = {
+      color = #windows > 0 and colors.with_alpha(colors.white, 0.55) or colors.with_alpha(colors.white, 0.42),
+    },
+  })
+
+  refs.window_count = #windows
+end
+
+local function refresh_workspace_windows(callback)
   local command = aerospace
-    .. " list-windows --workspace "
-    .. shell_quote(id)
-    .. " --format '%{app-name}\t%{window-title}\t%{window-id}\t%{monitor-name}'"
+    .. " list-windows --all --format '%{workspace}%{tab}%{app-name}%{tab}%{window-title}%{tab}%{window-id}%{tab}%{monitor-name}'"
 
   sbar.exec(command, function(output)
-    local windows = {}
+    local windows_by_workspace = {}
+    for id, _ in pairs(workspaces) do
+      windows_by_workspace[id] = {}
+    end
+
     for _, line in ipairs(split_lines(output)) do
-      table.insert(windows, parse_window_line(line))
-    end
-    attach_window_positions(windows)
-    sort_windows_by_position(windows)
-
-    local has_windows = #windows > 0
-    set_workspace_visible(id, has_windows)
-    set_workspace_neutral(id)
-
-    if not has_windows then
-      refs.window_count = 0
-      return
-    end
-
-    local compact_labels = workspace_uses_compact_labels(id, windows)
-
-    for index, item in ipairs(refs.apps) do
-      local window = windows[index]
-      if window then
-        local icon = app_icons[window.app] or app_icons.Default or ":default:"
-        local focused = current_window_id ~= nil and window.window_id == current_window_id
-        item:set({
-          drawing = true,
-          icon = {
-            string = icon,
-            color = colors.with_alpha(colors.white, focused and 0.96 or 0.62),
-            padding_right = compact_labels and 7 or 4,
-          },
-          label = {
-            string = compact_labels and "" or truncate(window.title, index == 1 and 22 or 14),
-            drawing = not compact_labels,
-            color = colors.with_alpha(colors.white, focused and 0.96 or 0.72),
-          },
-          background = { drawing = false },
-        })
-      else
-        item:set({
-          drawing = false,
-          icon = { string = "" },
-          label = { string = "", drawing = false },
-          background = { drawing = false },
-        })
+      local workspace, window = parse_workspace_window_line(line)
+      if workspace and window then
+        windows_by_workspace[workspace] = windows_by_workspace[workspace] or {}
+        table.insert(windows_by_workspace[workspace], window)
       end
     end
 
-    local overflow = #windows > max_windows
-    refs.ellipsis:set({
-      drawing = overflow,
-      icon = { string = overflow and icons.ellipsis or "" },
-    })
-    refs.label:set({
-      drawing = true,
-      icon = {
-        color = #windows > 0 and colors.with_alpha(colors.white, 0.55) or colors.with_alpha(colors.white, 0.42),
-      },
-    })
+    for id, _ in pairs(workspaces) do
+      render_workspace(id, windows_by_workspace[id] or {})
+    end
 
-    refs.window_count = #windows
+    if callback then
+      callback()
+    end
   end)
 end
 
 local function refresh_all()
+  if refresh_in_flight then
+    refresh_again = true
+    return
+  end
+
+  refresh_in_flight = true
   refresh_workspace_monitors()
   refresh_window_positions(function()
-    for id, _ in pairs(workspaces) do
-      refresh_workspace(id)
-    end
+    refresh_workspace_windows(function()
+      refresh_in_flight = false
+
+      if refresh_again then
+        refresh_again = false
+        refresh_all()
+      end
+    end)
   end)
 end
 
@@ -403,6 +468,8 @@ local function add_workspace(id)
 end
 
 sbar.add("event", "aerospace_workspace_change")
+sbar.add("event", "aerospace_focus_change")
+sbar.add("event", "aerospace_windows_change")
 
 local workspace_output = io.popen(aerospace .. " list-workspaces --all 2>/dev/null")
 if workspace_output then
@@ -431,10 +498,21 @@ end
 local observer = sbar.add("item", "aerospace.observer", {
   drawing = false,
   updates = true,
-  update_freq = 2,
+  update_freq = workspace_refresh_interval,
 })
 
 observer:subscribe({ "forced", "routine", "system_woke" }, function()
+  refresh_focus()
+  refresh_all()
+end)
+
+observer:subscribe({
+  "aerospace_focus_change",
+  "aerospace_windows_change",
+  "front_app_switched",
+  "space_windows_change",
+  "display_change",
+}, function()
   refresh_focus()
   refresh_all()
 end)

@@ -4,8 +4,6 @@ local settings = require("settings")
 
 local battery = sbar.add("item", "widgets.battery", {
   position = "right",
-  updates = true,
-  update_freq = 30,
   icon = {
     string = icons.battery.full,
     color = colors.green,
@@ -33,8 +31,16 @@ local battery = sbar.add("item", "widgets.battery", {
   click_script = settings.config_dir .. "/plugins/open_menu_extra.sh aldente",
 })
 
-local function battery_style(charge, charging)
-  if charging then
+local function parse_percent(value)
+  return tonumber(tostring(value or ""):match("[-%d%.]+"))
+end
+
+local function battery_style(charge, state)
+  state = tostring(state or ""):lower()
+
+  if state:find("full") then
+    return icons.battery.full, colors.green
+  elseif state:find("charging") and not state:find("discharging") then
     return icons.battery.charging, colors.green
   elseif charge >= 80 then
     return icons.battery.full, colors.green
@@ -49,21 +55,22 @@ local function battery_style(charge, charging)
   end
 end
 
-local function update()
-  sbar.exec("pmset -g batt", function(output)
-    local charge = tonumber(tostring(output):match("(%d+)%%")) or 0
-    local charging = tostring(output):find("AC Power") ~= nil
-    local icon, color = battery_style(charge, charging)
+local function update(env)
+  local charge = parse_percent(env.BATTERY_PERCENTAGE)
+  if not charge then
+    return
+  end
 
-    battery:set({
-      icon = {
-        string = icon,
-        color = color,
-      },
-      label = { string = charge .. "%" },
-    })
-  end)
+  local rounded = math.floor(charge + 0.5)
+  local icon, color = battery_style(rounded, env.BATTERY_STATE)
+
+  battery:set({
+    icon = {
+      string = icon,
+      color = color,
+    },
+    label = { string = rounded .. "%" },
+  })
 end
 
-battery:subscribe({ "forced", "routine", "power_source_change", "system_woke" }, update)
-update()
+battery:subscribe("system_stats", update)

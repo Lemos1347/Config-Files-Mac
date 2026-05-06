@@ -70,6 +70,38 @@
               runHook postInstall
             '';
           };
+
+          sketchybarSystemStats = pkgs.stdenvNoCC.mkDerivation rec {
+            pname = "sketchybar-system-stats";
+            version = "0.8.1";
+
+            src = pkgs.fetchzip {
+              url = "https://github.com/joncrangle/sketchybar-system-stats/releases/download/${version}/stats_provider-${version}-aarch64-apple-darwin.tar.gz";
+              hash = "sha256-/ZXvtdC79Mm0AYTEUS1fygX20fgld1b9r8JjqaMI0FM=";
+              stripRoot = false;
+            };
+
+            dontBuild = true;
+
+            installPhase = ''
+              runHook preInstall
+
+              releaseDir="stats_provider-${version}-aarch64-apple-darwin"
+              install -Dm755 "$releaseDir/stats_provider" "$out/bin/stats_provider"
+              install -Dm644 "$releaseDir/LICENSE" "$out/share/licenses/${pname}/LICENSE"
+              install -Dm644 "$releaseDir/README.md" "$out/share/doc/${pname}/README.md"
+
+              runHook postInstall
+            '';
+
+            meta = {
+              description = "System stats event provider for SketchyBar";
+              homepage = "https://github.com/joncrangle/sketchybar-system-stats";
+              license = lib.licenses.gpl3Only;
+              mainProgram = "stats_provider";
+              platforms = [ "aarch64-darwin" ];
+            };
+          };
         in
         {
           system.primaryUser = user;
@@ -132,6 +164,7 @@
             # skhd
             sketchybar
             sketchybar-app-font
+            sketchybarSystemStats
             sbarlua
             sbarlua.luaModule
             starship

@@ -4,8 +4,6 @@ local settings = require("settings")
 
 local memory = sbar.add("item", "widgets.memory", {
   position = "right",
-  updates = true,
-  update_freq = 10,
   icon = {
     string = icons.memory,
     color = colors.cyan,
@@ -28,26 +26,30 @@ local memory = sbar.add("item", "widgets.memory", {
   click_script = settings.config_dir .. "/plugins/open_menu_extra.sh stats-ram",
 })
 
-local command = [[/usr/bin/memory_pressure | /usr/bin/awk '/System-wide memory free percentage:/ { gsub("%", "", $5); printf "%d", 100 - $5 }']]
-
-local function update()
-  sbar.exec(command, function(output)
-    local used = tonumber(output) or 0
-    local color = colors.cyan
-    if used >= 85 then
-      color = colors.red
-    elseif used >= 70 then
-      color = colors.orange
-    elseif used >= 55 then
-      color = colors.yellow
-    end
-
-    memory:set({
-      icon = { color = color },
-      label = { string = "RAM " .. used .. "%" },
-    })
-  end)
+local function parse_percent(value)
+  return tonumber(tostring(value or ""):match("[-%d%.]+"))
 end
 
-memory:subscribe({ "forced", "routine", "system_woke" }, update)
-update()
+local function update(env)
+  local used = parse_percent(env.RAM_USAGE)
+  if not used then
+    return
+  end
+
+  local rounded = math.floor(used + 0.5)
+  local color = colors.cyan
+  if rounded >= 90 then
+    color = colors.red
+  elseif rounded >= 80 then
+    color = colors.orange
+  elseif rounded >= 65 then
+    color = colors.yellow
+  end
+
+  memory:set({
+    icon = { color = color },
+    label = { string = "RAM " .. rounded .. "%" },
+  })
+end
+
+memory:subscribe("system_stats", update)
