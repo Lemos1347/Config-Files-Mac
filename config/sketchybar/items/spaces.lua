@@ -201,34 +201,42 @@ local function set_workspace_neutral(id)
   })
 end
 
-local function refresh_focus()
+local function refresh_focus(callback)
   current_window_id = nil
 
-  local focused_window_output =
-    io.popen(aerospace .. " list-windows --focused --format '%{workspace}%{tab}%{window-id}' 2>/dev/null")
-  if focused_window_output then
-    local focused = focused_window_output:read("*l")
-    focused_window_output:close()
-    local workspace, window_id = tostring(focused or ""):match("^([^\t]+)\t([^\t]+)$")
-    if workspace and workspace ~= "" then
-      current_workspace = trim(workspace)
-    end
-    current_window_id = window_id and trim(window_id) or nil
-    if current_window_id == "" then
-      current_window_id = nil
+  local function done()
+    if callback then
+      callback()
     end
   end
 
-  if not current_workspace or current_workspace == "" then
-    local focused_workspace_output = io.popen(aerospace .. " list-workspaces --focused 2>/dev/null")
-    if focused_workspace_output then
-      local focused = focused_workspace_output:read("*l")
-      focused_workspace_output:close()
-      if focused and focused ~= "" then
-        current_workspace = trim(focused)
+  sbar.exec(
+    aerospace .. " list-windows --focused --format '%{workspace}%{tab}%{window-id}' 2>/dev/null",
+    function(focused)
+      local first_line = tostring(focused or ""):match("[^\r\n]+") or ""
+      local workspace, window_id = first_line:match("^([^\t]+)\t([^\t]+)$")
+      if workspace and workspace ~= "" then
+        current_workspace = trim(workspace)
       end
+      current_window_id = window_id and trim(window_id) or nil
+      if current_window_id == "" then
+        current_window_id = nil
+      end
+
+      if current_workspace and current_workspace ~= "" then
+        done()
+        return
+      end
+
+      sbar.exec(aerospace .. " list-workspaces --focused 2>/dev/null", function(focused_workspace)
+        local fallback = tostring(focused_workspace or ""):match("[^\r\n]+")
+        if fallback and fallback ~= "" then
+          current_workspace = trim(fallback)
+        end
+        done()
+      end)
     end
-  end
+  )
 end
 
 local function set_workspace_visible(id, visible)
@@ -369,8 +377,7 @@ local function focus_workspace(id)
     return
   end
   current_workspace = id
-  refresh_focus()
-  refresh_all()
+  refresh_focus(refresh_all)
 end
 
 local function add_workspace(id)
@@ -502,19 +509,15 @@ local observer = sbar.add("item", "aerospace.observer", {
 })
 
 observer:subscribe({ "forced", "routine", "system_woke" }, function()
-  refresh_focus()
-  refresh_all()
+  refresh_focus(refresh_all)
 end)
 
 observer:subscribe({
   "aerospace_focus_change",
   "aerospace_windows_change",
-  "front_app_switched",
-  "space_windows_change",
   "display_change",
 }, function()
-  refresh_focus()
-  refresh_all()
+  refresh_focus(refresh_all)
 end)
 
 observer:subscribe("aerospace_workspace_change", function(env)
