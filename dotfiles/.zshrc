@@ -239,6 +239,33 @@ alias t='eza --icons=always -T --no-symlinks'
 # Nix
 alias upgrade-nix='sudo determinate-nixd upgrade'
 
+_nix_darwin_config_dir="$HOME/.config/nix-darwin-config"
+_nix_darwin_flake_attr="MacBook-Pro-de-Henrique"
+
+_nix_darwin_switch() {
+  local config_dir="$1"
+  local flake_attr="$2"
+
+  sudo darwin-rebuild switch --flake "$config_dir#$flake_attr"
+}
+
+_nix_package_declared() {
+  local pkg="$1"
+  local flake="$2"
+
+  awk -v pkg="$pkg" '
+    {
+      line = $0
+      sub(/#.*/, "", line)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+      if (line == pkg) {
+        found = 1
+      }
+    }
+    END { exit found ? 0 : 1 }
+  ' "$flake"
+}
+
 # Add a package to nix-darwin and rebuild
 nix-add() {
   if [ -z "$1" ]; then
@@ -247,7 +274,8 @@ nix-add() {
   fi
 
   local pkg="$1"
-  local config_dir="$HOME/nix-darwin-config"
+  local config_dir="$_nix_darwin_config_dir"
+  local flake_attr="$_nix_darwin_flake_attr"
   local flake="$config_dir/flake.nix"
 
   # Verify the flake exists
@@ -256,34 +284,58 @@ nix-add() {
     return 1
   fi
 
-  # Validate the package exists in nixpkgs before editing anything
-  echo "Checking that '$pkg' exists in nixpkgs..."
-  if ! nix eval "nixpkgs#$pkg" --raw --apply 'p: p.name' &>/dev/null; then
-    echo "Error: package '$pkg' not found in nixpkgs"
+  # Validate against the same pinned nixpkgs used by this nix-darwin flake.
+  echo "Checking that '$pkg' exists in this flake's nixpkgs..."
+  if ! nix eval --raw "$config_dir#darwinConfigurations.$flake_attr.pkgs.$pkg.name" &>/dev/null; then
+    echo "Error: package '$pkg' not found in this flake's nixpkgs"
     echo "Try searching: nix search nixpkgs $pkg"
     return 1
   fi
 
   # Check if it's already in the flake
-  if grep -qE "^\s+$pkg\s*$" "$flake"; then
-    echo "'$pkg' is already in $flake"
+  if _nix_package_declared "$pkg" "$flake"; then
+    echo "'$pkg' is already declared in $flake"
+    echo "Run nix-rebuild if you need to switch the current system generation."
     return 0
   fi
 
-  # Insert the package on a new line before the closing ']' of systemPackages
-  # Assumes the "with pkgs; [ ... ]" format
-  sed -i.bak "/environment.systemPackages = with pkgs; \[/,/\];/ {
-    /\];/i\\
-    $pkg
-  }" "$flake"
+  local backup="${flake}.bak"
+  local tmp
+  tmp="$(mktemp)" || return 1
+
+  cp "$flake" "$backup"
+
+  # Insert the package before the closing bracket of environment.systemPackages.
+  if ! awk -v pkg="$pkg" '
+    /environment.systemPackages = with pkgs; \[/ {
+      in_packages = 1
+    }
+
+    in_packages && /^[[:space:]]*\];[[:space:]]*$/ {
+      print "            " pkg
+      inserted = 1
+      in_packages = 0
+    }
+
+    { print }
+
+    END { exit inserted ? 0 : 1 }
+  ' "$backup" > "$tmp"; then
+    echo "Error: could not find environment.systemPackages in $flake"
+    rm -f "$tmp"
+    mv "$backup" "$flake"
+    return 1
+  fi
+
+  mv "$tmp" "$flake"
 
   echo "Added '$pkg' to $flake. Rebuilding..."
-  if (cd "$config_dir" && darwin-rebuild switch --flake .); then
+  if _nix_darwin_switch "$config_dir" "$flake_attr"; then
     echo "✓ '$pkg' installed successfully"
-    rm -f "${flake}.bak"
+    rm -f "$backup"
   else
     echo "✗ Rebuild failed. Restoring previous flake..."
-    mv "${flake}.bak" "$flake"
+    mv "$backup" "$flake"
     return 1
   fi
 }
@@ -295,30 +347,56 @@ nix-remove() {
   fi
 
   local pkg="$1"
-  local config_dir="$HOME/nix-darwin-config"
+  local config_dir="$_nix_darwin_config_dir"
+  local flake_attr="$_nix_darwin_flake_attr"
   local flake="$config_dir/flake.nix"
 
-  if ! grep -qE "^\s+$pkg\s*$" "$flake"; then
+  if ! _nix_package_declared "$pkg" "$flake"; then
     echo "'$pkg' is not in $flake"
     return 1
   fi
 
-  cp "$flake" "${flake}.bak"
-  sed -i '' "/^\s\+$pkg\s*$/d" "$flake"
+  local backup="${flake}.bak"
+  local tmp
+  tmp="$(mktemp)" || return 1
+
+  cp "$flake" "$backup"
+
+  if ! awk -v pkg="$pkg" '
+    {
+      line = $0
+      sub(/#.*/, "", line)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+      if (line == pkg) {
+        removed = 1
+        next
+      }
+      print
+    }
+
+    END { exit removed ? 0 : 1 }
+  ' "$backup" > "$tmp"; then
+    echo "Error: could not remove '$pkg' from $flake"
+    rm -f "$tmp"
+    mv "$backup" "$flake"
+    return 1
+  fi
+
+  mv "$tmp" "$flake"
 
   echo "Removed '$pkg' from $flake. Rebuilding..."
-  if (cd "$config_dir" && darwin-rebuild switch --flake .); then
+  if _nix_darwin_switch "$config_dir" "$flake_attr"; then
     echo "✓ '$pkg' removed successfully"
-    rm -f "${flake}.bak"
+    rm -f "$backup"
   else
     echo "✗ Rebuild failed. Restoring previous flake..."
-    mv "${flake}.bak" "$flake"
+    mv "$backup" "$flake"
     return 1
   fi
 }
 
 nix-rebuild() {
-  cd ~/.config/nix-darwin-config && sudo darwin-rebuild switch --flake .
+  _nix_darwin_switch "$_nix_darwin_config_dir" "$_nix_darwin_flake_attr"
 }
 
 # Local secrets and machine-specific config

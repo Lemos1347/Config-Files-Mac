@@ -18,10 +18,6 @@
     "ghostty/config".source = ./config/ghostty/config;
     "kitty/kitty.conf".source = ./config/kitty/kitty.conf;
     "mise/config.toml".source = ./config/mise/config.toml;
-    "sketchybar" = {
-      source = ./config/sketchybar;
-      recursive = true;
-    };
     "starship.toml".source = ./config/starship.toml;
 
     # Legacy yabai/skhd stack. Keep commented while AeroSpace is active;

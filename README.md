@@ -30,7 +30,7 @@ Review those values in `flake.nix` before applying it on a different machine.
 ## What It Manages
 
 - macOS defaults, Dock behavior, keyboard repeat settings, pointer settings, and launchd services.
-- Nix packages for CLI tools, development tools, shell tooling, SketchyBar, JankyBorders, tmux, Starship, mise, and fonts.
+- Nix packages for CLI tools, development tools, shell tooling, JankyBorders, tmux, Starship, mise, and fonts.
 - Homebrew casks for GUI applications that are better installed through Homebrew.
 - Home Manager links for selected dotfiles and selected `~/.config` files.
 - AeroSpace via Homebrew, with legacy yabai/skhd config kept commented for switching back.
@@ -44,7 +44,7 @@ Review those values in `flake.nix` before applying it on a different machine.
 | `flake.nix`        | nix-darwin system configuration, packages, services, Homebrew, and Home Manager wiring.           |
 | `home.nix`         | Home Manager file mappings into `$HOME`.                                                          |
 | `dotfiles/`        | Files linked directly into `$HOME`, such as `.zshrc`, `.zprofile`, `.tmux.conf`, and `.p10k.zsh`. |
-| `config/`          | Managed subset of `~/.config`, including AeroSpace, SketchyBar, Ghostty, Kitty, mise, and Starship. |
+| `config/`          | Managed subset of `~/.config`, including AeroSpace, Ghostty, Kitty, mise, and Starship.             |
 | `cypher-shell.nix` | Custom package definition used by the flake.                                                      |
 
 ## Installation

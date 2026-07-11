@@ -1,5 +1,0 @@
-require("items.widgets.stats_provider")
-require("items.widgets.date")
-require("items.widgets.battery")
-require("items.widgets.memory")
-require("items.widgets.cpu")

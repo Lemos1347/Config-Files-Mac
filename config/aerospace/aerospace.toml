@@ -5,29 +5,18 @@
 config-version = 2
 
 # Active AeroSpace stack: start at login and let AeroSpace own the lifecycle
-# for the bar and focused-window borders.
+# for focused-window borders.
 start-at-login = true
 
-# Active AeroSpace stack: start Nix-installed JankyBorders and SketchyBar.
+# Active AeroSpace stack: start Nix-installed JankyBorders.
 # Keep these idempotent because AeroSpace runs after-startup-command every time
 # the app starts.
 after-startup-command = [
   'exec-and-forget /bin/sh -c "pkill -x borders 2>/dev/null || true; exec /run/current-system/sw/bin/borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0 hidpi=off"',
-  'exec-and-forget /run/current-system/sw/bin/sketchybar --reload',
 ]
 
-# Active SketchyBar integration: notify the bar whenever AeroSpace focus changes.
-# This keeps the focused app/window highlight current without a fast polling loop.
-on-focus-changed = [
-  'exec-and-forget /run/current-system/sw/bin/sketchybar --trigger aerospace_focus_change',
-]
-
-# Active SketchyBar integration: notify the bar whenever AeroSpace changes workspaces.
-exec-on-workspace-change = [
-  '/bin/sh',
-  '-c',
-  'exec /run/current-system/sw/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE="$AEROSPACE_FOCUSED_WORKSPACE"',
-]
+# Cursor segue foco automaticamente (ótimo pra multi-monitor)
+on-focus-changed = ['move-mouse window-lazy-center']
 
 # Mirrors the old yabai BSP feel: tiled windows, small gaps, and mouse follows monitor focus.
 enable-normalization-flatten-containers = true
@@ -48,10 +37,7 @@ inner.horizontal = 3
 inner.vertical = 3
 outer.left = 3
 outer.bottom = 3
-# Active SketchyBar stack: reserve space for the rounded 34px top bar plus margins
-# and a visible gap between the bar and tiled windows. The built-in display has
-# less vertical room, so keep a much smaller managed-window gap there.
-outer.top = [{ monitor."Built-in Retina Display" = 3 }, 42]
+outer.top = 3
 outer.right = 3
 
 [mode.main.binding]
@@ -160,11 +146,6 @@ alt-shift-l = ['join-with right', 'mode main']
 
 # Legacy yabai rules translated to AeroSpace floating callbacks where possible.
 # Sticky/layer-above behavior has no exact AeroSpace equivalent, so those apps float.
-[[on-window-detected]]
-if.during-aerospace-startup = false
-check-further-callbacks = true
-run = 'exec-and-forget /run/current-system/sw/bin/sketchybar --trigger aerospace_windows_change'
-
 [[on-window-detected]]
 if.window-title-regex-substring = '^todo$'
 run = 'layout floating'

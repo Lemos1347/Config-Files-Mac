@@ -22,8 +22,9 @@ bat = "latest"
 bun = "latest"
 erlang = "latest"
 elixir = "latest"
-railway = "latest"
+railway = { version = "latest", exe = "railway" }
 yarn = "latest"
+pipx = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["python"]

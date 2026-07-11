@@ -21,7 +21,7 @@
       home = "/Users/${user}";
 
       configuration =
-        { lib, pkgs, ... }:
+        { pkgs, ... }:
         let
           jetbrainsMonoNerdFont = pkgs.stdenvNoCC.mkDerivation {
             pname = "jetbrains-mono-nerd-font";
@@ -71,37 +71,6 @@
             '';
           };
 
-          sketchybarSystemStats = pkgs.stdenvNoCC.mkDerivation rec {
-            pname = "sketchybar-system-stats";
-            version = "0.8.1";
-
-            src = pkgs.fetchzip {
-              url = "https://github.com/joncrangle/sketchybar-system-stats/releases/download/${version}/stats_provider-${version}-aarch64-apple-darwin.tar.gz";
-              hash = "sha256-/ZXvtdC79Mm0AYTEUS1fygX20fgld1b9r8JjqaMI0FM=";
-              stripRoot = false;
-            };
-
-            dontBuild = true;
-
-            installPhase = ''
-              runHook preInstall
-
-              releaseDir="stats_provider-${version}-aarch64-apple-darwin"
-              install -Dm755 "$releaseDir/stats_provider" "$out/bin/stats_provider"
-              install -Dm644 "$releaseDir/LICENSE" "$out/share/licenses/${pname}/LICENSE"
-              install -Dm644 "$releaseDir/README.md" "$out/share/doc/${pname}/README.md"
-
-              runHook postInstall
-            '';
-
-            meta = {
-              description = "System stats event provider for SketchyBar";
-              homepage = "https://github.com/joncrangle/sketchybar-system-stats";
-              license = lib.licenses.gpl3Only;
-              mainProgram = "stats_provider";
-              platforms = [ "aarch64-darwin" ];
-            };
-          };
         in
         {
           system.primaryUser = user;
@@ -142,11 +111,12 @@
             hcp
             htop
             # Active AeroSpace stack: AeroSpace itself is a Homebrew cask, while
-            # borders and SketchyBar stay in Nix so their versions are pinned by the flake.
+            # JankyBorders stays in Nix so its version is pinned by the flake.
             jankyborders
             jq
             lazygit
-            libpq
+            postgresql_18
+            postgresql_18.lib
             libuv
             llvm
             mise
@@ -162,11 +132,6 @@
             # Legacy yabai/skhd stack: uncomment these two packages and the
             # matching service/Home Manager lines below if switching back.
             # skhd
-            sketchybar
-            sketchybar-app-font
-            sketchybarSystemStats
-            sbarlua
-            sbarlua.luaModule
             starship
             stripe-cli
             tmux
@@ -176,16 +141,13 @@
           ];
 
           environment.pathsToLink = [
-            "/lib/lua"
-            "/lib/sketchybar-app-font"
+            "/lib"
             "/share/oh-my-zsh"
             "/share/oh-my-zsh-custom"
-            "/share/lua"
           ];
 
           fonts.packages = [
             jetbrainsMonoNerdFont
-            pkgs.sketchybar-app-font
           ];
 
           # GUI apps are managed through Homebrew casks for native /Applications
@@ -219,8 +181,8 @@
             };
           };
 
-          # Active window manager is AeroSpace. It starts SketchyBar and
-          # JankyBorders from config/aerospace/aerospace.toml.
+          # Active window manager is AeroSpace. It starts JankyBorders from
+          # config/aerospace/aerospace.toml.
           #
           # Legacy yabai/skhd stack: uncomment these three lines and the
           # matching packages/Home Manager links if switching back.
@@ -266,16 +228,6 @@
                 chown ${user}:staff "$backup"
               fi
             done
-          '';
-
-          # Active SketchyBar stack: set System Settings -> Menu Bar ->
-          # "Automatically hide and show the menu bar" to "Always".
-          # The defaults keys alone do not reliably update the visible System Settings state.
-          system.activationScripts.postActivation.text = lib.mkAfter ''
-            echo "configuring menu bar autohide for ${user}..." >&2
-            uid="$(id -u ${user})"
-            launchctl asuser "$uid" sudo --user=${user} -- /usr/bin/osascript -e 'tell application "System Events" to tell dock preferences to set autohide menu bar to true' || true
-            killall -qu ${user} SystemUIServer || true
           '';
 
           system.activationScripts.miseInstall.text = ''
@@ -466,8 +418,6 @@
               NSAutomaticDashSubstitutionEnabled = true;
               NSAutomaticPeriodSubstitutionEnabled = true;
               NSAutomaticQuoteSubstitutionEnabled = true;
-              # Active SketchyBar stack: official nix-darwin menu bar autohide option.
-              _HIHideMenuBar = true;
               # Active AeroSpace stack: official nix-darwin option for
               # `defaults write -g NSWindowShouldDragOnGesture -bool true`.
               NSWindowShouldDragOnGesture = true;
