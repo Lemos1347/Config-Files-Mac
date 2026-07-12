@@ -1,0 +1,87 @@
+# herdr config — keybindings ported from dotfiles/.tmux.conf
+# Linked to ~/.config/herdr/config.toml by home-manager (see home.nix).
+# Reload a running server with: herdr server reload-config
+
+[theme]
+name = "one-dark"
+
+[keys]
+# tmux: prefix C-a instead of C-b
+prefix = "ctrl+a"
+
+# Pane focus: ctrl+hjkl handles it vim-aware (vim-herdr-navigation plugin,
+# bound below), so the tmux-style prefix+hjkl was dropped — this also frees
+# prefix+h for split_horizontal. Alt-arrows stay (tmux `bind -n M-Left ...`).
+focus_pane_left = "alt+left"
+focus_pane_down = "alt+down"
+focus_pane_up = "alt+up"
+focus_pane_right = "alt+right"
+
+# Shift-arrows move directly between Herdr spaces (workspaces).
+previous_workspace = "shift+up"
+next_workspace = "shift+down"
+
+# tmux: Shift-arrows switch windows without prefix; windows = herdr tabs.
+# alt+comma/period need the terminal to treat option as alt
+# (ghostty: macos-option-as-alt = true, already set).
+previous_tab = ["prefix+p", "shift+left", "alt+comma"]
+next_tab = ["prefix+n", "shift+right", "alt+period"]
+
+# tmux: base-index 1 → tabs are 1-based here by default
+switch_tab = "prefix+1..9"
+
+# tmux split chord `prefix s v` / `prefix s h`; herdr has no chord tables,
+# so the trailing letter became the binding: v = vertical, h = horizontal.
+split_vertical = "prefix+v"
+split_horizontal = "prefix+h"
+
+# tmux: maximize via `prefix s m` (resize-pane -Z); keep herdr's z too
+zoom = ["prefix+m", "prefix+z"]
+
+# tmux: prefix J/K/H/L and prefix M-hjkl resized panes directly;
+# herdr resizes through a mode instead (enter, then hjkl)
+resize_mode = "prefix+r"
+
+# tmux: `prefix r` reloaded the config; shifted here because prefix+r is resize
+reload_config = "prefix+shift+r"
+
+# herdr opens settings on prefix+s by default, colliding with the tmux split
+# chord muscle memory (prefix s, then v/h/m). herdr has no chords, so shift it.
+settings = "prefix+shift+s"
+
+# vim-aware ctrl+hjkl navigation (vim-tmux-navigator equivalent) via the
+# vim-herdr-navigation herdr plugin, installed pinned to the audited commit:
+#   herdr plugin install paulbkim-dev/vim-herdr-navigation --ref 53e318c772c4d3b7fbd904ac43bcf3e5b5d8b244
+# Editor side lives at ~/.config/nvim/after/plugin/herdr_nav.lua.
+
+[[keys.command]]
+key = "ctrl+h"
+type = "plugin_action"
+command = "vim-herdr-navigation.left"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "plugin_action"
+command = "vim-herdr-navigation.down"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "plugin_action"
+command = "vim-herdr-navigation.up"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "plugin_action"
+command = "vim-herdr-navigation.right"
+
+[ui]
+# tmux: mouse on
+mouse_capture = true
+
+# prefix+b (toggle_sidebar): hide the sidebar entirely when collapsed instead
+# of the default "compact" rail that keeps a 1-column workspace strip visible.
+sidebar_collapsed_mode = "hidden"
+
+[ui.toast]
+# Notifications as native macOS notifications instead of in-UI toasts.
+delivery = "system"

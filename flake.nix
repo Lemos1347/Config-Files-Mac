@@ -3,6 +3,9 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # Stable channel used only for targeted overrides (see the starship
+    # overlay below). Remove together with that overlay.
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager/master";
@@ -15,6 +18,7 @@
       home-manager,
       nix-darwin,
       nixpkgs,
+      nixpkgs-stable,
     }:
     let
       user = "henriquematias";
@@ -91,6 +95,17 @@
 
           # Allow unfree (proprietary) packages
           nixpkgs.config.allowUnfree = true;
+
+          # starship 1.26.0 from nixpkgs-unstable fails to link on
+          # aarch64-darwin (cctools ld64 crash; fixed upstream in
+          # NixOS/nixpkgs#540463 but not yet in the channel). Take starship
+          # from stable until the channel catches up, then drop this overlay
+          # and the nixpkgs-stable input.
+          nixpkgs.overlays = [
+            (final: prev: {
+              starship = nixpkgs-stable.legacyPackages.${prev.stdenv.hostPlatform.system}.starship;
+            })
+          ];
 
           # List packages installed in system profile. To search by name, run:
           # $ nix-env -qaP | grep wget
@@ -240,6 +255,31 @@
               fi
             else
               echo "warning: $mise_config not found; skipping mise install" >&2
+            fi
+          '';
+
+          # Install herdr plugins. herdr itself is a mise tool (see
+          # config/mise/config.toml); `mise exec` resolves the managed binary
+          # regardless of backend install layout, installing it first if
+          # missing. Plugins are pinned to security-audited commits — bump a
+          # ref only after reviewing the new commits.
+          system.activationScripts.herdrPluginInstall.text = ''
+            echo "installing herdr plugins for ${user}..." >&2
+
+            mise_config=${home}/.config/nix-darwin-config/config/mise/config.toml
+            herdr_exec() {
+              sudo -u ${user} env HOME=${home} USER=${user} MISE_GLOBAL_CONFIG_FILE="$mise_config" \
+                ${pkgs.mise}/bin/mise exec herdr -- herdr "$@"
+            }
+
+            # vim-herdr-navigation: seamless ctrl+hjkl between herdr panes and
+            # vim splits. Keybinds live in config/herdr/config.toml; the editor
+            # side is ~/.config/nvim/after/plugin/herdr_nav.lua (lemos-nvim repo).
+            if ! herdr_exec plugin list 2>/dev/null | grep -q "vim-herdr-navigation"; then
+              if ! herdr_exec plugin install paulbkim-dev/vim-herdr-navigation \
+                --ref 53e318c772c4d3b7fbd904ac43bcf3e5b5d8b244 --yes; then
+                echo "warning: herdr plugin install failed; retry manually with 'herdr plugin install paulbkim-dev/vim-herdr-navigation --yes'" >&2
+              fi
             fi
           '';
 

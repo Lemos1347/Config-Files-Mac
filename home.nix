@@ -16,6 +16,7 @@
     # Active AeroSpace stack.
     "aerospace/aerospace.toml".source = ./config/aerospace/aerospace.toml;
     "ghostty/config".source = ./config/ghostty/config;
+    "herdr/config.toml".source = ./config/herdr/config.toml;
     "kitty/kitty.conf".source = ./config/kitty/kitty.conf;
     "mise/config.toml".source = ./config/mise/config.toml;
     "starship.toml".source = ./config/starship.toml;
